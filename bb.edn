@@ -1,8 +1,4 @@
-{:paths ["src" "test"]
- :deps {speclj/speclj {:mvn/version "3.13.0"}}
+{:paths ["test"]
  :tasks
  {test {:doc "Run handoff helper tests"
-        :task (exec 'swarmforge.handoff-test/-main)}
-  spec {:doc "Run speclj specs"
-        :requires ([speclj.main :as main])
-        :task (apply main/-main "-c" "test" *command-line-args*)}}}
+        :task (exec 'swarmforge.handoff-test/-main)}}}
