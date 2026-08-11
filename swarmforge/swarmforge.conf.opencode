@@ -1,0 +1,20 @@
+# SwarmForge test config — opencode backend (two-pack workflow)
+#
+# Uso:
+#   cp swarmforge/swarmforge.conf.opencode swarmforge/swarmforge.conf
+#   ./swarm
+#
+# Formato: window <role> <agent> <worktree> [task|batch] [extra-cli-args...]
+#
+# La primera ventana listada es la cleanup window: cerrarla apaga el enjambre.
+# Para seleccionar modelo: agregar -m <provider/model> al final de cada línea.
+# Si se omite, opencode usa el modelo activo en ~/.config/opencode/opencode.jsonc.
+
+# cleanup window — corre en master (directorio principal)
+window coordinator opencode master task
+
+# coder — implementa con TDD, corre en worktree dedicado
+window coder opencode wt-coder task
+
+# cleaner — cleanup y revisión; modo batch para consumir múltiples handoffs
+window cleaner opencode wt-cleaner batch
