@@ -3,3 +3,6 @@
 .claude/
 .swarmforge/
 .worktrees/
+memory/
+tmp/
+swarmforge/scripts/shared-articles/
