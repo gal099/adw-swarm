@@ -162,9 +162,9 @@
                   (fail! (str red "Error:" reset " Invalid role '" role "' on line " line-no ": role names may not contain underscores")))
                 (when (contains? roles role)
                   (fail! (str red "Error:" reset " Duplicate role '" role "' in " (:config-file ctx))))
-                (when (and (not (#{"none" "master"} worktree)) (contains? worktrees worktree))
+                (when (and (not (#{"none" "master" ".."} worktree)) (contains? worktrees worktree))
                   (fail! (str red "Error:" reset " Duplicate worktree '" worktree "' in " (:config-file ctx))))
-                (when (or (str/includes? worktree "/") (#{"." ".."} worktree))
+                (when (or (str/includes? worktree "/") (#{"."} worktree))
                   (fail! (str red "Error:" reset " Invalid worktree '" worktree "' for role '" role "'")))
                 (when-not (#{"claude" "codex" "copilot" "grok" "opencode"} agent)
                   (fail! (str red "Error:" reset " Unsupported agent '" agent "' for role '" role "'")))
@@ -174,7 +174,9 @@
                   (fail! (str red "Error:" reset " Missing role prompt " (fs/path roles-dir (str role ".prompt")))))
                 (let [worktree-path (if (#{"none" "master"} worktree)
                                       working-dir
-                                      (worktree-path-for-name worktrees-dir worktree))
+                                      (if (= ".." worktree)
+                                        (fs/parent working-dir)
+                                        (worktree-path-for-name worktrees-dir worktree)))
                       row {:role role
                            :agent agent
                            :session (session-name-for-role role)
@@ -186,7 +188,7 @@
                   (recur (next lines)
                          (conj rows row)
                          (conj roles role)
-                         (cond-> worktrees (not (#{"none" "master"} worktree)) (conj worktree))))))))
+                         (cond-> worktrees (not (#{"none" "master" ".."} worktree)) (conj worktree))))))))
         (do
           (when (empty? rows)
             (fail! (str red "Error:" reset " No windows defined in " (:config-file ctx))))
@@ -253,7 +255,7 @@
           :let [worktree-name (:worktree-name row)
                 worktree-path (:worktree-path row)
                 branch-name (str "swarmforge-" worktree-name)]
-          :when (not (#{"none" "master"} worktree-name))]
+          :when (not (#{"none" "master" ".."} worktree-name))]
     (when-not (or (fs/exists? (fs/path worktree-path ".git"))
                   (fs/directory? (fs/path worktree-path ".git")))
       (sh "git" "-C" (str (:working-dir ctx)) "worktree" "add" "--force" "-B" branch-name (str worktree-path) "HEAD"))))
@@ -270,7 +272,8 @@
 (defn sync-worktree-scripts! [ctx]
   (doseq [row (:roles ctx)
           :let [worktree-path (:worktree-path row)]
-          :when (not= (str worktree-path) (str (:working-dir ctx)))]
+          :when (and (not= (str worktree-path) (str (:working-dir ctx)))
+                     (not= ".." (:worktree-name row)))]
     (let [role-scripts-dir (fs/path worktree-path "swarmforge" "scripts")
           role-state-dir (fs/path worktree-path ".swarmforge")]
       (fs/create-dirs role-scripts-dir)
